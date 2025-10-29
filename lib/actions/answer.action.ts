@@ -15,6 +15,7 @@ import Interaction from "@/database/interaction.model";
 import User from "@/database/user.model";
 import { logActivity } from './activity.action';
 import Reply from "@/database/reply.model";
+import { detectAnswerSpam } from '../spam-detector';
 
 
 export async function createAnswer(params: CreateAnswerParams) {
@@ -23,7 +24,17 @@ export async function createAnswer(params: CreateAnswerParams) {
 
     const { content, author, question, path } = params;
 
-    const newAnswer = await Answer.create({ content, author, question });
+    // Run spam detection
+    const spamDetection = detectAnswerSpam(content);
+
+    const newAnswer = await Answer.create({ 
+      content, 
+      author, 
+      question,
+      isSpam: spamDetection.isSpam,
+      spamScore: spamDetection.spamScore,
+      spamReason: spamDetection.reason
+    });
 
     // Add the answer to the question's answers array
     const questionObject = await Question.findByIdAndUpdate(question, {
@@ -289,5 +300,56 @@ export async function deleteAnswer(params: DeleteAnswerParams) {
     revalidatePath(path);
   } catch (error) {
     console.log(error);
+  }
+}
+
+export async function getSpamAnswers(params: GetManagerAnswersParams) {
+  try {
+    connectToDatabase();
+
+    const { searchQuery, filter, page = 1, pageSize = 10 } = params;
+
+    const skipAmount = (page - 1) * pageSize;
+
+    // Only get answers flagged as spam
+    const query = { isSpam: true };
+
+    let sortOptions = {};
+
+    switch (filter) {
+      case "highest_score":
+        sortOptions = { spamScore: -1 };
+        break;
+      case "recent":
+        sortOptions = { createdAt: -1 };
+        break;
+      default:
+        sortOptions = { spamScore: -1 };
+        break;
+    }
+
+    const answers = await Answer.find(query)
+      .populate("author", "_id clerkId name picture")
+      .populate("question", "_id title")
+      .skip(skipAmount)
+      .limit(pageSize)
+      .sort(sortOptions);
+
+    // Filter in JavaScript after fetching and populating
+    const filteredAnswers = searchQuery
+      ? answers.filter(
+          (answer) =>
+            answer.author.name.match(new RegExp(searchQuery, "i")) ||
+            answer.question.title.match(new RegExp(searchQuery, "i"))
+        )
+      : answers;
+
+    const totalAnswers = await Answer.countDocuments(query);
+    const isNextAnswer = totalAnswers > skipAmount + filteredAnswers.length;
+
+    return { answers: filteredAnswers, isNextAnswer };
+  } catch (error) {
+    console.log(error);
+    throw error;
   }
 }

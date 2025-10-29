@@ -10,6 +10,9 @@ export interface IQuestion extends Document {
   author: Schema.Types.ObjectId;
   answers: Schema.Types.ObjectId[];
   createdAt: Date;
+  isSpam: boolean;
+  spamScore: number;
+  spamReason?: string;
 }
 
 const QuestionSchema = new Schema({
@@ -21,7 +24,10 @@ const QuestionSchema = new Schema({
   downvotes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   author: { type: Schema.Types.ObjectId, ref: 'User' },
   answers: [{ type: Schema.Types.ObjectId, ref: 'Answer' }],
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  isSpam: { type: Boolean, default: false },
+  spamScore: { type: Number, default: 0 },
+  spamReason: { type: String }
 })
 
 const Question = models.Question || model('Question', QuestionSchema);

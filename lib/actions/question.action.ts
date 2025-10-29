@@ -10,6 +10,7 @@ import Answer from "@/database/answer.model";
 import Interaction from "@/database/interaction.model";
 import { FilterQuery } from "mongoose";
 import { logActivity } from './activity.action';
+import { detectSpam } from '../spam-detector';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getQuestions(params: GetQuestionsParams) {
@@ -121,11 +122,17 @@ export async function createQuestion(params: CreateQuestionParams) {
 
     const { title, content, tags, author, path } = params;
 
+    // Run spam detection
+    const spamDetection = detectSpam(title, content);
+
     // Create the question
     const question = await Question.create({
       title,
       content,
-      author
+      author,
+      isSpam: spamDetection.isSpam,
+      spamScore: spamDetection.spamScore,
+      spamReason: spamDetection.reason
     });
 
     const tagDocuments = [];
@@ -410,6 +417,57 @@ export async function getRecommendedQuestions(params: RecommendedParams) {
     return { questions: recommendedQuestions, isNext };
   } catch (error) {
     console.error("Error getting recommended questions:", error);
+    throw error;
+  }
+}
+
+export async function getSpamQuestions(params: GetManagerQuestionsParams) {
+  try {
+    connectToDatabase();
+
+    const { searchQuery, filter, page = 1, pageSize = 10 } = params;
+
+    const skipAmount = (page - 1) * pageSize;
+
+    // Only get questions flagged as spam
+    const query: FilterQuery<typeof Question> = { isSpam: true };
+
+    let sortOptions = {};
+
+    switch (filter) {
+      case "highest_score":
+        sortOptions = { spamScore: -1 };
+        break;
+      case "most_recent":
+        sortOptions = { createdAt: -1 };
+        break;
+      default:
+        sortOptions = { spamScore: -1 };
+        break;
+    }
+
+    const questions = await Question.find(query)
+      .populate({ path: 'tags', model: Tag })
+      .populate({ path: 'author', model: User })
+      .skip(skipAmount)
+      .limit(pageSize)
+      .sort(sortOptions);
+
+    const filteredQuestions = searchQuery
+      ? questions.filter(
+          (question) =>
+            question.author.name.match(new RegExp(searchQuery, "i")) ||
+            question.title.match(new RegExp(searchQuery, "i"))
+        )
+      : questions;
+
+    const totalQuestions = await Question.countDocuments(query);
+
+    const isNextQuestions = totalQuestions > skipAmount + questions.length;
+
+    return { questions: filteredQuestions, isNextQuestions };
+  } catch (error) {
+    console.log(error);
     throw error;
   }
 }

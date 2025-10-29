@@ -8,6 +8,9 @@ export interface IAnswer extends Document {
     downvotes: Schema.Types.ObjectId[];
     replies: Schema.Types.ObjectId[];
     createdAt: Date;
+    isSpam: boolean;
+    spamScore: number;
+    spamReason?: string;
 }
 
 const AnswerSchema = new Schema({
@@ -17,7 +20,10 @@ const AnswerSchema = new Schema({
     upvotes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     downvotes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     replies: [{ type: Schema.Types.ObjectId, ref: 'Reply' }],
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    isSpam: { type: Boolean, default: false },
+    spamScore: { type: Number, default: 0 },
+    spamReason: { type: String }
 })
 
 const Answer = models.Answer || model('Answer', AnswerSchema);
