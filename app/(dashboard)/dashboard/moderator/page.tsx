@@ -66,6 +66,13 @@ const Moderator = () => {
             </Button>
           </Link>
         </div>
+        <div className="mt-4 flex justify-center">
+          <Link href="/dashboard/moderator/spam" className="flex max-sm:w-full">
+            <Button className="min-h-[46px] border-2 border-red-500 bg-red-50 px-4 py-3 text-red-600 hover:bg-red-100 dark:bg-red-950 dark:text-red-400 dark:hover:bg-red-900">
+              🛡️ Review Spam Detection
+            </Button>
+          </Link>
+        </div>
     </Protect>
     </>
   )
