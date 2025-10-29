@@ -136,3 +136,12 @@ export const assignBadges = (params: BadgeParam) => {
 
   return badgeCounts;
 }
+
+/**
+ * Escapes special characters in a string for use in a RegExp
+ * @param string - The string to escape
+ * @returns Escaped string safe for RegExp
+ */
+export function escapeRegExp(string: string): string {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}

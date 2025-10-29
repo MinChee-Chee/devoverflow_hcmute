@@ -16,6 +16,7 @@ import User from "@/database/user.model";
 import { logActivity } from './activity.action';
 import Reply from "@/database/reply.model";
 import { detectAnswerSpam } from '../spam-detector';
+import { escapeRegExp } from '../utils';
 
 
 export async function createAnswer(params: CreateAnswerParams) {
@@ -135,8 +136,8 @@ export async function getManagerAnswers(params: GetManagerAnswersParams) {
     const filteredAnswers = searchQuery
       ? answers.filter(
           (answer) =>
-            answer.author.name.match(new RegExp(searchQuery, "i")) ||
-            answer.question.title.match(new RegExp(searchQuery, "i"))
+            answer.author.name.match(new RegExp(escapeRegExp(searchQuery), "i")) ||
+            answer.question.title.match(new RegExp(escapeRegExp(searchQuery), "i"))
         )
       : answers;
 
@@ -339,8 +340,8 @@ export async function getSpamAnswers(params: GetManagerAnswersParams) {
     const filteredAnswers = searchQuery
       ? answers.filter(
           (answer) =>
-            answer.author.name.match(new RegExp(searchQuery, "i")) ||
-            answer.question.title.match(new RegExp(searchQuery, "i"))
+            answer.author.name.match(new RegExp(escapeRegExp(searchQuery), "i")) ||
+            answer.question.title.match(new RegExp(escapeRegExp(searchQuery), "i"))
         )
       : answers;
 

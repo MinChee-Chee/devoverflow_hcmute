@@ -11,6 +11,7 @@ import Interaction from "@/database/interaction.model";
 import { FilterQuery } from "mongoose";
 import { logActivity } from './activity.action';
 import { detectSpam } from '../spam-detector';
+import { escapeRegExp } from '../utils';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getQuestions(params: GetQuestionsParams) {
@@ -456,8 +457,8 @@ export async function getSpamQuestions(params: GetManagerQuestionsParams) {
     const filteredQuestions = searchQuery
       ? questions.filter(
           (question) =>
-            question.author.name.match(new RegExp(searchQuery, "i")) ||
-            question.title.match(new RegExp(searchQuery, "i"))
+            question.author.name.match(new RegExp(escapeRegExp(searchQuery), "i")) ||
+            question.title.match(new RegExp(escapeRegExp(searchQuery), "i"))
         )
       : questions;
 
