@@ -86,13 +86,19 @@ export async function getAnswers(params: GetAnswersParams) {
         break;
     }
 
-    const answers = await Answer.find({ question: questionId })
+    const answers = await Answer.find({ 
+      question: questionId,
+      isSpam: { $ne: true } // Exclude spam answers
+    })
       .populate("author", "_id clerkId name picture")
       .skip(skipAmount)
       .limit(pageSize)
       .sort(sortOptions);
 
-    const totalAnswers = await Answer.countDocuments({ question: questionId });
+    const totalAnswers = await Answer.countDocuments({ 
+      question: questionId,
+      isSpam: { $ne: true } // Exclude spam answers from count
+    });
 
     const isNextAnswer = totalAnswers > skipAmount + answers.length;
 

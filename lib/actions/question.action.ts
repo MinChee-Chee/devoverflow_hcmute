@@ -22,7 +22,9 @@ export async function getQuestions(params: GetQuestionsParams) {
 
     const skipAmount = (page - 1)* pageSize;
 
-    const query: FilterQuery<typeof Question> = {};
+    const query: FilterQuery<typeof Question> = {
+      isSpam: { $ne: true } // Exclude spam questions from homepage
+    };
 
     if(searchQuery) {
       query.$or = [
@@ -323,8 +325,14 @@ export async function editQuestion(params: EditQuestionParams) {
       throw new Error("Question not found");
     }
 
+    // Run spam detection on edited content
+    const spamDetection = detectSpam(title, content);
+
     question.title = title;
     question.content = content;
+    question.isSpam = spamDetection.isSpam;
+    question.spamScore = spamDetection.spamScore;
+    question.spamReason = spamDetection.reason;
 
     await question.save();
 
@@ -338,7 +346,7 @@ export async function getHotQuestions() {
   try {
     connectToDatabase();
 
-    const hotQuestions = await Question.find({})
+    const hotQuestions = await Question.find({ isSpam: { $ne: true } })
       .sort({ views: -1, upvotes: -1 }) 
       .limit(6);
 
@@ -389,6 +397,7 @@ export async function getRecommendedQuestions(params: RecommendedParams) {
       $and: [
         { tags: { $in: distinctUserTagIds } }, // Questions with user's tags
         { author: { $ne: user._id } }, // Exclude user's own questions
+        { isSpam: { $ne: true } }, // Exclude spam questions
       ],
     };
 
