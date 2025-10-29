@@ -9,6 +9,8 @@ The spam detection bot automatically scans questions and answers for spam or pro
 ## Features
 
 - **Automatic Detection**: All new questions and answers are automatically scanned when created
+- **Edit Detection**: Content is re-scanned when edited to detect spam added via edits
+- **Content Hiding**: Spam content is automatically hidden from homepage and public views
 - **Spam Scoring**: Content is assigned a numerical spam score (0-100+)
 - **Flagging System**: Content with a score ≥ 50 is flagged as spam
 - **Moderator Dashboard**: Dedicated interface for reviewing flagged content
@@ -108,13 +110,37 @@ Features:
 
 - `lib/spam-detector.ts` - Core spam detection logic
 - `app/api/spam-detection/route.ts` - API endpoint
-- `lib/actions/question.action.ts` - Question integration
-- `lib/actions/answer.action.ts` - Answer integration
+- `lib/actions/question.action.ts` - Question integration (creation, editing, filtering)
+- `lib/actions/answer.action.ts` - Answer integration (creation, filtering)
 - `app/(dashboard)/dashboard/moderator/spam/page.tsx` - Moderator UI
 - `components/cards/SpamQuestionCard.tsx` - Spam question card
 - `components/cards/SpamAnswerCard.tsx` - Spam answer card
 - `database/question.model.ts` - Question schema
 - `database/answer.model.ts` - Answer schema
+
+## How It Works
+
+### On Content Creation
+When a user creates a question or answer, the spam detection runs automatically:
+1. Content is analyzed by `detectSpam()` or `detectAnswerSpam()`
+2. A spam score is calculated based on various indicators
+3. If score ≥ 50, content is flagged (`isSpam: true`)
+4. Content is saved with spam metadata
+
+### On Content Edit
+When a user edits a question, spam detection runs again:
+1. Edited content is re-analyzed by `detectSpam()`
+2. Spam score and flag are updated
+3. Previously clean content can become flagged if edited to contain spam
+
+### Content Visibility
+Spam content is automatically hidden from public views:
+- `getQuestions()` - Homepage questions list (excludes `isSpam: true`)
+- `getAnswers()` - Answers on question pages (excludes `isSpam: true`)
+- `getHotQuestions()` - Hot questions sidebar (excludes `isSpam: true`)
+- `getRecommendedQuestions()` - Recommended questions (excludes `isSpam: true`)
+
+Spam content is only visible to moderators in the spam detection dashboard.
 
 ## Testing
 
