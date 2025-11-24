@@ -11,27 +11,34 @@ export async function viewQuestion(params: ViewQuestionParams) {
 
     const { questionId, userId } = params;
 
-    // Update view count for the question
-    await Question.findByIdAndUpdate(questionId, { $inc: { views: 1 }});
+    let shouldIncrementView = true;
 
-    if(userId) {
-      const existingInteraction = await Interaction.findOne({ 
-        user: userId,
-        action: "view",
-        question: questionId,
-      })
+    if (userId) {
+      const { upsertedCount } = await Interaction.updateOne(
+        {
+          user: userId,
+          action: "view",
+          question: questionId,
+        },
+        {
+          $setOnInsert: {
+            user: userId,
+            action: "view",
+            question: questionId,
+          },
+        },
+        { upsert: true }
+      );
 
-      if(existingInteraction) return console.log('User has already viewed.')
+      // Only increment if this is the user's first recorded view
+      shouldIncrementView = upsertedCount > 0;
+    }
 
-      // Create interaction
-      await Interaction.create({
-        user: userId,
-        action: "view",
-        question: questionId,
-      })
+    if (shouldIncrementView) {
+      await Question.findByIdAndUpdate(questionId, { $inc: { views: 1 } });
     }
   } catch (error) {
-    console.log(error)
+    console.log(error);
     throw error;
   }
 }

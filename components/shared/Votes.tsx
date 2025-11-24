@@ -8,7 +8,7 @@ import { toggleSaveQuestion } from "@/lib/actions/user.action";
 import { formatAndDivideNumber } from "@/lib/utils";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 interface Props {
   type: string;
@@ -33,11 +33,25 @@ const Votes = ({
 }: Props) => {
   const pathname = usePathname();
   const router = useRouter();
+  const trackedQuestionRef = useRef<string | null>(null);
+
+  const parsedItemId = useMemo(() => JSON.parse(itemId), [itemId]);
+  const parsedUserId = useMemo(
+    () => (userId ? JSON.parse(userId) : undefined),
+    [userId]
+  );
 
   const handleSave = async () => {
+    if (!parsedUserId) {
+      return toast({
+        title: "Please log in",
+        description: "You must be logged in to perform this action ",
+      });
+    }
+
     await toggleSaveQuestion({
-      userId: JSON.parse(userId),
-      questionId: JSON.parse(itemId),
+      userId: parsedUserId!,
+      questionId: parsedItemId,
       path: pathname,
     })
 
@@ -48,7 +62,7 @@ const Votes = ({
   }
 
   const handleVote = async (action: string) => {
-    if(!userId) {
+    if(!parsedUserId) {
       return toast({
         title: 'Please log in',
         description: 'You must be logged in to perform this action '
@@ -58,16 +72,16 @@ const Votes = ({
     if(action === 'upvote') {
       if(type === 'Question') {
         await upvoteQuestion({ 
-          questionId: JSON.parse(itemId),
-          userId: JSON.parse(userId),
+          questionId: parsedItemId,
+          userId: parsedUserId,
           hasupVoted,
           hasdownVoted,
           path: pathname,
         })
       } else if(type === 'Answer') {
         await upvoteAnswer({ 
-          answerId: JSON.parse(itemId),
-          userId: JSON.parse(userId),
+          answerId: parsedItemId,
+          userId: parsedUserId,
           hasupVoted,
           hasdownVoted,
           path: pathname,
@@ -83,16 +97,16 @@ const Votes = ({
     if(action === 'downvote') {
       if(type === 'Question') {
         await downvoteQuestion({ 
-          questionId: JSON.parse(itemId),
-          userId: JSON.parse(userId),
+          questionId: parsedItemId,
+          userId: parsedUserId,
           hasupVoted,
           hasdownVoted,
           path: pathname,
         })
       } else if(type === 'Answer') {
         await downvoteAnswer({ 
-          answerId: JSON.parse(itemId),
-          userId: JSON.parse(userId),
+          answerId: parsedItemId,
+          userId: parsedUserId,
           hasupVoted,
           hasdownVoted,
           path: pathname,
@@ -107,11 +121,31 @@ const Votes = ({
   }
 
   useEffect(() => {
+    if (type !== "Question") return;
+
+    if (trackedQuestionRef.current === parsedItemId) return;
+
+    const trackAnonymousView = () => {
+      if (typeof window === "undefined") return false;
+      const storageKey = `viewed-question-${parsedItemId}`;
+      if (window.localStorage.getItem(storageKey)) return false;
+      window.localStorage.setItem(storageKey, "true");
+      return true;
+    };
+
+    if (!parsedUserId && !trackAnonymousView()) {
+      return;
+    }
+
+    trackedQuestionRef.current = parsedItemId;
+
     viewQuestion({
-      questionId: JSON.parse(itemId),
-      userId: userId ? JSON.parse(userId) : undefined,
-    })
-  }, [itemId, userId, pathname, router]);
+      questionId: parsedItemId,
+      userId: parsedUserId,
+    }).catch((error) => {
+      console.error("Failed to record question view", error);
+    });
+  }, [parsedItemId, parsedUserId, type]);
 
   return (
     <div className="flex gap-5">
