@@ -101,6 +101,7 @@ const Question = async ({params, searchParams}: any) => {
 
     <Answer
     question={result.content}
+    questionTitle={result.title}
     questionId={JSON.stringify(result._id)}
     authorId={mongoUser ? JSON.stringify(mongoUser._id) : ""}/>
   </>
