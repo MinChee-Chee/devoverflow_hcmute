@@ -19,6 +19,7 @@ const GlobalResult = ({isOpen}: Props) => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState([]);
+  const requestKeyRef = useRef<string>('');
 
   const global = searchParams.get('global');
   const type = searchParams.get('type');
@@ -30,6 +31,9 @@ const GlobalResult = ({isOpen}: Props) => {
     }
 
     const fetchResult = async (query: string) => {
+      const requestKey = `${query}-${type || 'all'}-${Date.now()}`;
+      requestKeyRef.current = requestKey;
+
       setResult([]);
       setIsLoading(true);
 
@@ -39,12 +43,16 @@ const GlobalResult = ({isOpen}: Props) => {
           type,
         });
 
-        setResult(JSON.parse(res));
+        if (requestKeyRef.current === requestKey) {
+          setResult(JSON.parse(res));
+        }
       } catch (error) {
         console.log(error);
         throw error;
       } finally {
-        setIsLoading(false);
+        if (requestKeyRef.current === requestKey) {
+          setIsLoading(false);
+        }
       }
     };
 
