@@ -8,7 +8,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import GlobalFilters from './GlobalFilters'
-import { globalSearch } from '@/lib/actions/tag.actions'
+import { globalSearch } from '@/lib/actions/general.action'
 
 interface Props {
   isOpen?: boolean;
@@ -24,29 +24,32 @@ const GlobalResult = ({isOpen}: Props) => {
   const type = searchParams.get('type');
 
   useEffect(() => {
-    const fetchResult = async () => {
+    if (!global) {
+      setResult([]);
+      return;
+    }
+
+    const fetchResult = async (query: string) => {
       setResult([]);
       setIsLoading(true);
 
       try {
-        // Fetch data from the server
         const res = await globalSearch({
-          query: global, 
-          type})
+          query,
+          type,
+        });
 
-          setResult(JSON.parse(res))
+        setResult(JSON.parse(res));
       } catch (error) {
         console.log(error);
         throw error;
       } finally {
         setIsLoading(false);
       }
-    }
+    };
 
-    if(global) {
-      fetchResult();
-    }
-  },[global, type] )
+    fetchResult(global);
+  }, [global, type]);
 
   const renderLink = ( type: string, id:string) => {
     switch (type) {

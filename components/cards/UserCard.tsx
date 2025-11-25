@@ -19,7 +19,7 @@ interface Props {
     const interactedTags = await getTopInteractedTags({ userId: user._id })
   
     return (
-      <article className="shadow-light100_darknone background-light900_dark200 light-border flex w-full max-xs:min-w-full xs:w-[260px] flex-col items-center justify-center rounded-2xl border p-8">
+      <article className="flex w-full max-xs:min-w-full xs:w-[260px] flex-col items-center justify-center rounded-2xl p-8 border light-border background-light900_dark200 shadow-light100_darknone">
         <Link href={`/profile/${user.clerkId}`} className="flex flex-col items-center">
           <Image 
             src={user.picture}

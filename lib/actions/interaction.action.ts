@@ -37,6 +37,6 @@ export async function viewQuestion(params: ViewQuestionParams) {
   }
 }
 
-// Testing the increment of author's reputation (not stable || not working)
+// Testing the increment of author's reputation
 // This function may not be working as expected, as the increment of the author's reputation is not stable.
 // It will be developed further in the future.

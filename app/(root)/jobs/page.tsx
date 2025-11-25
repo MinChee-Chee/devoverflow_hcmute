@@ -21,7 +21,7 @@ export default function Jobs() {
       <>
         <h1 className="h1-bold text-dark100_light900">IT Jobs for UTE Future Devs</h1>
         <div className="mt-10 flex w-full flex-col gap-6">
-          <div className="text-center py-8">
+          <div className="py-8 text-center">
             <p className="text-dark400_light700">Loading jobs...</p>
           </div>
         </div>

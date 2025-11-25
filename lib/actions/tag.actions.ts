@@ -8,8 +8,10 @@ import { FilterQuery, Types } from "mongoose";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Tag, {ITag} from "@/database/tag.model";
 import Question from "@/database/question.model";
-import Interaction from "@/database/interaction.model";
-// import Question from "@/database/question.model";
+type TagCountEntry = {
+  count: number;
+  tag: ITag | null;
+};
 
 export async function getTopInteractedTags(params: GetTopInteractedTagsParams) {
     try {
@@ -27,18 +29,22 @@ export async function getTopInteractedTags(params: GetTopInteractedTagsParams) {
       }).populate('tags', '_id name');
 
       // Collect all tag IDs from questions the user has asked
-      const tagCounts = new Map<string, { count: number; tag: any }>();
+      const tagCounts = new Map<string, TagCountEntry>();
       
       userQuestions.forEach((question) => {
         if (question.tags && Array.isArray(question.tags)) {
-          question.tags.forEach((tag: any) => {
-            const tagId = tag._id?.toString() || tag.toString();
+          question.tags.forEach((tag: ITag | Types.ObjectId) => {
+            const tagId =
+              tag instanceof Types.ObjectId ? tag.toString() : tag._id?.toString();
+
+            if (!tagId) return;
+
             if (tagCounts.has(tagId)) {
               tagCounts.get(tagId)!.count += 1;
             } else {
               tagCounts.set(tagId, {
                 count: 1,
-                tag: typeof tag === 'object' ? tag : null
+                tag: typeof tag === 'object' ? (tag as ITag) : null
               });
             }
           });
