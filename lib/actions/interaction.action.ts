@@ -11,10 +11,11 @@ export async function viewQuestion(params: ViewQuestionParams) {
 
     const { questionId, userId } = params;
 
-    let shouldIncrementView = true;
+    // Always increment the question views, regardless of user state
+    await Question.findByIdAndUpdate(questionId, { $inc: { views: 1 } });
 
     if (userId) {
-      const { upsertedCount } = await Interaction.updateOne(
+      await Interaction.updateOne(
         {
           user: userId,
           action: "view",
@@ -29,13 +30,6 @@ export async function viewQuestion(params: ViewQuestionParams) {
         },
         { upsert: true }
       );
-
-      // Only increment if this is the user's first recorded view
-      shouldIncrementView = upsertedCount > 0;
-    }
-
-    if (shouldIncrementView) {
-      await Question.findByIdAndUpdate(questionId, { $inc: { views: 1 } });
     }
   } catch (error) {
     console.log(error);

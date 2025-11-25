@@ -3,10 +3,17 @@ import RightSidebar from '@/components/shared/RightSidebar'
 import Navbar from '@/components/shared/navbar/Navbar'
 import { Toaster } from '@/components/ui/toaster'
 import React from 'react'
+import Script from 'next/script'
+import PushNotificationsInitializer from '@/components/providers/PushNotificationsInitializer'
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <main className="background-light850_dark100 relative">
+      <Script
+        src="https://js.pusher.com/beams/2.1.0/push-notifications-cdn.js"
+        strategy="afterInteractive"
+      />
+      <PushNotificationsInitializer />
       <Navbar />
       <div className="flex">
         <LeftSidebar />

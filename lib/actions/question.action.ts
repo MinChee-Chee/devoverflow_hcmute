@@ -9,6 +9,7 @@ import { revalidatePath } from "next/cache";
 import Answer from "@/database/answer.model";
 import Interaction from "@/database/interaction.model";
 import { FilterQuery } from "mongoose";
+import { notifyUserByClerkId } from "../push-notifications";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getQuestions(params: GetQuestionsParams) {
@@ -161,6 +162,17 @@ export async function upvoteQuestion(params: QuestionVoteParams) {
     await User.findByIdAndUpdate(question.author, { $inc: { reputation: hasupVoted ? -9 : 9 }});
 
     }
+
+    if (!hasupVoted) {
+      await notifyQuestionOwnerAboutVote({
+        questionId,
+        questionTitle: question.title,
+        questionAuthorId: question.author.toString(),
+        actorId: userId,
+        voteType: "upvote",
+      });
+    }
+
     revalidatePath(path);
   } catch (error) {
     console.log(error);
@@ -201,6 +213,17 @@ export async function downvoteQuestion(params: QuestionVoteParams) {
     await User.findByIdAndUpdate(question.author, { $inc: { reputation: hasdownVoted ? -9 : 9 }});
 
     }
+
+    if (!hasdownVoted) {
+      await notifyQuestionOwnerAboutVote({
+        questionId,
+        questionTitle: question.title,
+        questionAuthorId: question.author.toString(),
+        actorId: userId,
+        voteType: "downvote",
+      });
+    }
+
     revalidatePath(path);
   } catch (error) {
     console.log(error);
@@ -340,4 +363,41 @@ export async function getRecommendedQuestions(params: RecommendedParams) {
     console.error("Error getting recommended questions:", error);
     throw error;
   }
+}
+
+async function notifyQuestionOwnerAboutVote({
+  questionId,
+  questionTitle,
+  questionAuthorId,
+  actorId,
+  voteType,
+}: {
+  questionId: string;
+  questionTitle: string;
+  questionAuthorId: string;
+  actorId: string;
+  voteType: "upvote" | "downvote";
+}) {
+  const [questionOwner, actor] = await Promise.all([
+    User.findById(questionAuthorId),
+    User.findById(actorId),
+  ]);
+
+  if (!questionOwner?.clerkId) return;
+  if (questionAuthorId === actorId) return;
+
+  const actionVerb = voteType === "upvote" ? "upvoted" : "downvoted";
+  const dataType =
+    voteType === "upvote" ? "question_upvote" : "question_downvote";
+
+  await notifyUserByClerkId({
+    clerkId: questionOwner.clerkId,
+    title: `${actor?.name ?? "Someone"} ${actionVerb} your question`,
+    body: `See the latest activity on "${questionTitle}".`,
+    path: `/question/${questionId}`,
+    data: {
+      type: dataType,
+      questionId,
+    },
+  });
 }

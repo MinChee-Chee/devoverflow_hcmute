@@ -7,6 +7,7 @@ import Question from "@/database/question.model";
 import { revalidatePath } from "next/cache";
 import Interaction from "@/database/interaction.model";
 import User from "@/database/user.model";
+import { notifyUserByClerkId } from "../push-notifications";
 
 export async function createAnswer(params: CreateAnswerParams) {
   try {
@@ -29,7 +30,30 @@ export async function createAnswer(params: CreateAnswerParams) {
       tags: questionObject.tags
     })
 
-    await User.findByIdAndUpdate(author, { $inc: { reputation: 10 }});
+    const answeringUser = await User.findByIdAndUpdate(
+      author,
+      { $inc: { reputation: 10 }},
+      { new: true }
+    );
+
+    if (
+      questionObject?.author &&
+      questionObject.author.toString() !== author.toString()
+    ) {
+      const questionOwner = await User.findById(questionObject.author);
+
+      await notifyUserByClerkId({
+        clerkId: questionOwner?.clerkId,
+        title: `${answeringUser?.name ?? "Someone"} replied to your question`,
+        body: `A new answer was just posted on "${questionObject.title}".`,
+        path: `/question/${question}`,
+        data: {
+          type: "answer_created",
+          questionId: question.toString(),
+          answerId: newAnswer._id.toString(),
+        },
+      });
+    }
 
     revalidatePath(path)
   } catch (error) {
