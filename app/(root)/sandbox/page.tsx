@@ -172,7 +172,7 @@ const SandboxPage = () => {
         throw new Error('Language not supported for execution')
       }
 
-      const response = await fetch('/api/sandbox/execute', {
+      const response = await fetch('/api/sandbox', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
