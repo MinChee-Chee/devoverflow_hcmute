@@ -193,7 +193,8 @@ export async function downvoteQuestion(params: QuestionVoteParams) {
     let updateQuery = {};
 
     if(hasdownVoted) {
-      updateQuery = { $pull: { downvote: userId }}
+      // Remove existing downvote
+      updateQuery = { $pull: { downvotes: userId }}
     } else if (hasupVoted) {
       updateQuery = { 
         $pull: { upvotes: userId },

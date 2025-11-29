@@ -22,8 +22,6 @@ export const getTimestamp = (createdAt: Date, now?: Date): string => {
   // Use provided now time or current time
   const currentTime = now || new Date();
   
-  // Round to nearest minute to prevent hydration mismatches
-  // This ensures server and client render the same value even with timing differences
   const minute = 60 * 1000;
   const nowRounded = new Date(Math.floor(currentTime.getTime() / minute) * minute);
   const createdAtRounded = new Date(Math.floor(createdAt.getTime() / minute) * minute);
@@ -37,8 +35,10 @@ export const getTimestamp = (createdAt: Date, now?: Date): string => {
   const month = 30 * day;
   const year = 365 * day;
 
-  if (timeDifference < minute) {
-    // For posts less than 1 minute old, show "just now" to avoid hydration issues
+  // Use a slightly wider \"just now\" window (< 2 minutes) so that small
+  // server/client timing differences around hydration don't flip between
+  // \"just now\" and \"1 minute ago\".
+  if (timeDifference < 2 * minute) {
     return "just now";
   } else if (timeDifference < hour) {
     const minutes = Math.floor(timeDifference / minute);

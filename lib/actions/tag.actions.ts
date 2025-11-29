@@ -168,9 +168,11 @@ export async function getTopInteractedTags(params: GetTopInteractedTagsParams) {
       }
   
       const isNext = tag.questions.length > pageSize;
-      
-      const questions = tag.questions;
-  
+
+      // Only return the first `pageSize` questions; the extra one is used
+      // solely to detect if a next page exists.
+      const questions = tag.questions.slice(0, pageSize);
+
       return { tagTitle: tag.name, questions, isNext };
   
     } catch (error) {

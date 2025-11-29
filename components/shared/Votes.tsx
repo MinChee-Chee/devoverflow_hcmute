@@ -44,20 +44,39 @@ const Votes = ({
   const [localHasDownvoted, setLocalHasDownvoted] = useState(hasdownVoted);
   const [localHasSaved, setLocalHasSaved] = useState(hasSaved);
 
-  const parsedItemId = useMemo(() => JSON.parse(itemId), [itemId]);
-  const parsedUserId = useMemo(
-    () => (userId ? JSON.parse(userId) : undefined),
-    [userId]
-  );
+  const parsedItemId = useMemo(() => {
+    try {
+      return JSON.parse(itemId)
+    } catch (error) {
+      console.error("[Votes] Failed to parse itemId JSON:", { itemId, error })
+      // Fallback: use the raw string so voting/saving can still work
+      return itemId
+    }
+  }, [itemId]);
+  const parsedUserId = useMemo(() => {
+    if (!userId) {
+      return undefined
+    }
+    try {
+      return JSON.parse(userId)
+    } catch (error) {
+      console.error("[Votes] Failed to parse userId JSON:", { userId, error })
+      // Fallback: return undefined if parsing fails (user not authenticated or invalid format)
+      return undefined
+    }
+  }, [userId]);
   
   // Get string version of itemId for comparison and storage
   const itemIdString = useMemo(() => {
-    if (typeof parsedItemId === 'string') {
-      return parsedItemId;
+    if (typeof parsedItemId === "string") {
+      return parsedItemId
+    }
+    if (parsedItemId == null) {
+      return itemId
     }
     // If it's an object, convert to string for comparison
-    return String(parsedItemId);
-  }, [parsedItemId]);
+    return String(parsedItemId)
+  }, [parsedItemId, itemId]);
 
   // Sync local state with props when they change
   useEffect(() => {

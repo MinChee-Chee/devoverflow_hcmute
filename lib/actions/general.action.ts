@@ -45,8 +45,8 @@ export async function globalSearch(params: SearchParams) {
               );
         }
       } else {
-        // Search in specific model
-        const modelInfo = modelsAndTypes.find((item) => item.type === type);
+        // Search in specific model (use normalized lowercase type)
+        const modelInfo = modelsAndTypes.find((item) => item.type === typeLower);
   
         if (!modelInfo) {
           throw new Error("Invalid search type");
@@ -56,14 +56,23 @@ export async function globalSearch(params: SearchParams) {
           .find({ [modelInfo.searchField]: regexQuery })
           .limit(8);
   
-        results = queryResults.map((item: any) => ({
-          title:
-            type === "answer"
-              ? `Answers containing ${query}`
-              : item[modelInfo.searchField],
-          type,
-          id: type === "user" ? item.clerkId : type === "answer" ? item.question : item._id,
-        }));
+        results = queryResults.map((item: any) => {
+          const resultType = typeLower; // always normalized
+
+          return {
+            title:
+              resultType === "answer"
+                ? `Answers containing ${query}`
+                : item[modelInfo.searchField],
+            type: resultType,
+            id:
+              resultType === "user"
+                ? item.clerkId
+                : resultType === "answer"
+                ? item.question
+                : item._id,
+          };
+        });
       }
       console.log(results)
       return JSON.stringify(results);

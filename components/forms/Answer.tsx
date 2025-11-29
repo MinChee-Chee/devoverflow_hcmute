@@ -59,8 +59,17 @@ const Answer = ({question, questionTitle, questionId, authorId}: Props) => {
       if (typeof parsedQuestionId === 'string') {
         return parsedQuestionId;
       }
-      // If it's an object, convert to string
-      return String(parsedQuestionId);
+
+      if (parsedQuestionId && typeof (parsedQuestionId as any).toString === 'function') {
+        const idString = (parsedQuestionId as any).toString();
+        // Guard against generic "[object Object]" just in case
+        if (idString && idString !== '[object Object]') {
+          return idString;
+        }
+      }
+
+      // Fallback to empty string so SWR key becomes null and we don't fire a bad request
+      return '';
     }, [parsedQuestionId]);
     
     // Use SWR to fetch answers - shows cached data immediately while fetching updates

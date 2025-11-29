@@ -18,9 +18,17 @@ export async function createAnswer(params: CreateAnswerParams) {
     const newAnswer = await Answer.create({ content, author, question });
     
     // Add the answer to the question's answers array
-    const questionObject = await Question.findByIdAndUpdate(question, {
-      $push: { answers: newAnswer._id}
-    })
+    const questionObject = await Question.findByIdAndUpdate(
+      question,
+      {
+        $push: { answers: newAnswer._id },
+      },
+      { new: true }
+    )
+
+    if (!questionObject) {
+      throw new Error("Question not found while creating answer")
+    }
 
     await Interaction.create({
       user: author,
@@ -159,7 +167,8 @@ export async function downvoteAnswer(params: AnswerVoteParams) {
     let updateQuery = {};
 
     if(hasdownVoted) {
-      updateQuery = { $pull: { downvote: userId }}
+      // Remove existing downvote
+      updateQuery = { $pull: { downvotes: userId }}
     } else if (hasupVoted) {
       updateQuery = { 
         $pull: { upvotes: userId },
